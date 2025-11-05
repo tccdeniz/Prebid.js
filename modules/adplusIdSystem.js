@@ -70,6 +70,7 @@ function setAdplusIdToCookie(value) {
   if (value) {
     if (value.expiresIn === -1) {
       // Uid expired
+      logWarn(LOG_PREFIX + 'AdPlus ID expired');
       clearStorage();
       return;
     }
@@ -114,8 +115,13 @@ function setAdplusIdToCookie(value) {
 function fetchAdplusId(isRotate, uid, callback) {
   let apiUrl = API_URL;
 
+  const storageOk = storage.cookiesAreEnabled() || storage.localStorageIsEnabled();
+  if (!storageOk) {
+    apiUrl = `${apiUrl}&storage_ok=${storageOk ? "1" : "0"}`;
+  }
+
   if (isRotate && uid) {
-    apiUrl = `${API_URL}&old_uid=${uid}`;
+    apiUrl = `${apiUrl}&old_uid=${uid}`;
   }
 
   ajax(apiUrl, {
