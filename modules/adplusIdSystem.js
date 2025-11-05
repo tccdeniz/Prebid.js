@@ -6,10 +6,7 @@
  */
 import {
   logError,
-  logInfo,
   logWarn,
-  generateUUID,
-  isStr,
   isPlainObject,
 } from '../src/utils.js';
 import {
@@ -27,16 +24,41 @@ const MODULE_NAME = 'adplusId';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-export const ADPLUS_COOKIE_NAME = '_adplus_id';
-export const API_URL = 'https://id.ad-plus.com.tr';
-const EXPIRATION = 60 * 60 * 24 * 1000; // 1 Day
+export const ADPLUS_UID_NAME = '_adplus_uid_v2';
+export const ADPLUS_PB_CLIENT_ID = 'xqkDY946ohWmBm3gWXDTfD';
+export const API_URL = `https://id.ad-plus.com.tr/v2?client_id=${ADPLUS_PB_CLIENT_ID}`;
+const ROTATION_INTERVAL = 60 * 60 * 4 * 1000; // 4 Hours
 const LOG_PREFIX = 'User ID - adplusId submodule: ';
 
 /**
- * @returns {string} -
+ * @returns {Object} -
  */
 function getIdFromStorage() {
-  return storage.getCookie(ADPLUS_COOKIE_NAME);
+  const lsDt = storage.getDataFromLocalStorage(ADPLUS_UID_NAME);
+
+  if (lsDt) {
+    return JSON.parse(lsDt);
+  }
+
+  const cookieDt = storage.getCookie(ADPLUS_UID_NAME);
+
+  if (cookieDt) {
+    return JSON.parse(cookieDt);
+  }
+}
+
+/**
+ * clears adplus id values from storage
+ * @returns {void} -
+ */
+function clearStorage() {
+  storage.removeDataFromLocalStorage(ADPLUS_UID_NAME)
+  storage.setCookie(
+    ADPLUS_UID_NAME,
+    "",
+    "Thu, 01 Jan 1970 00:00:00 UTC",
+    'none'
+  );
 }
 
 /**
@@ -44,12 +66,39 @@ function getIdFromStorage() {
  * @param {string} uid -
  * @returns {void} -
  */
-function setAdplusIdToCookie(uid) {
-  if (uid) {
-    const expires = new Date(Date.now() + EXPIRATION).toUTCString();
+function setAdplusIdToCookie(value) {
+  if (value) {
+    if (value.expiresIn === -1) {
+      // Uid expired
+      clearStorage();
+      return;
+    }
+
+    let expiresIn = 0;
+
+    if (value.expiresIn == null || value.expiresIn === -2) {
+      expiresIn = (ROTATION_INTERVAL * 3) - 1000
+    } else {
+      expiresIn = value.expiresIn * 1000
+    }
+
+    const now = Date.now();
+
+    let data = {
+      uid: value.uid,
+      atype: value.atype,
+      expiresAt: now + expiresIn,
+      rotateAt: now + ROTATION_INTERVAL,
+    };
+
+    const json = JSON.stringify(data);
+
+    storage.setDataInLocalStorage(ADPLUS_UID_NAME, json);
+
+    const expires = new Date(data.expiresAt).toUTCString()
     storage.setCookie(
-      ADPLUS_COOKIE_NAME,
-      uid,
+      ADPLUS_UID_NAME,
+      json,
       expires,
       'none'
     );
@@ -57,29 +106,29 @@ function setAdplusIdToCookie(uid) {
 }
 
 /**
- * @returns {string} -
+ * @param {boolean} isRotate - Determines whether the request is for rotation
+ * @param {string} uid - UID to rotate
+ * @param {function} callback - Callback
+ * @returns {{callback: function}} - Callback function
  */
-function getApiUrl() {
-  return `${API_URL}?token=${generateUUID()}`;
-}
+function fetchAdplusId(isRotate, uid, callback) {
+  let apiUrl = API_URL;
 
-/**
- * @returns {{callback: function}} -
- */
-function fetchAdplusId(callback) {
-  const apiUrl = getApiUrl();
+  if (isRotate && uid) {
+    apiUrl = `${API_URL}&old_uid=${uid}`;
+  }
 
   ajax(apiUrl, {
     success: (response) => {
       if (response) {
         try {
-          const { uid } = JSON.parse(response);
-          if (!uid) {
+          const data = JSON.parse(response);
+          if (data == null || !data.uid) {
             logWarn(LOG_PREFIX + 'AdPlus ID is null');
             return callback();
           }
-          setAdplusIdToCookie(uid);
-          callback(uid);
+          setAdplusIdToCookie(data);
+          callback(data);
         } catch (error) {
           logError(LOG_PREFIX + error);
           callback();
@@ -109,11 +158,8 @@ export const adplusIdSystemSubmodule = {
    * @returns {{adplusId: string} | undefined}
    */
   decode(value) {
-    const idVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
-    if (idVal) {
-      return {
-        adplusId: idVal,
-      }
+    if (value && isPlainObject(value)) {
+      return { 'adplusId': { id: value.uid, atype: value.atype } };
     }
   },
 
@@ -122,29 +168,54 @@ export const adplusIdSystemSubmodule = {
    * @function
    * @returns {{id: string | undefined }}
    */
-  getId(config, consentData, storedId) {
-    if (storedId) {
-      logInfo(LOG_PREFIX + 'Got storedId: ', storedId);
+  getId(config, consentData) {
+    const dt = getIdFromStorage();
+
+    if (dt) {
+      const now = Date.now();
+      if (dt.expiresAt && dt.expiresAt <= now) {
+        clearStorage();
+        return {
+          callback: function (callback) {
+            fetchAdplusId(false, "", callback);
+          }
+        };
+      }
+
+      const rotate = dt.rotateAt && dt.rotateAt <= now;
+      if (rotate) {
+        return {
+          callback: function (callback) {
+            fetchAdplusId(true, dt.uid, callback);
+          }
+        };
+      }
+
       return {
-        id: storedId,
+        id: dt,
       };
     }
 
-    const uid = getIdFromStorage();
-
-    if (uid) {
-      return {
-        id: uid,
-      };
-    }
-
-    return { callback: fetchAdplusId };
+    return {
+      callback: function (callback) {
+        fetchAdplusId(false, "", callback);
+      }
+    };
   },
   eids: {
-    'adplusId': {
-      source: 'ad-plus.com.tr',
-      atype: 1
-    },
+    adplusId: function (values, _) {
+      return [
+        {
+          source: 'ad-plus.com.tr',
+          uids: values.map(function (value) {
+            return {
+              id: value.id,
+              atype: value.atype
+            };
+          })
+        }
+      ];
+    }
   }
 };
 

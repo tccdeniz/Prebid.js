@@ -1,44 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import * as utils from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
 
 // #region Constants
 export const BIDDER_CODE = 'adplus';
 export const ADPLUS_ENDPOINT = 'https://ssp.ad-plus.com.tr/server/headerBidding';
-export const DGID_CODE = 'adplus_dg_id';
-export const SESSION_CODE = 'adplus_s_id';
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-const COOKIE_EXP = 1000 * 60 * 60 * 24; // 1 day
-// #endregion
-
-// #region Helpers
-export function isValidUuid(uuid) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    uuid
-  );
-}
-
-function getSessionId() {
-  let sid = storage.cookiesAreEnabled() && storage.getCookie(SESSION_CODE);
-
-  if (
-    !sid || !isValidUuid(sid)
-  ) {
-    sid = utils.generateUUID();
-    setSessionId(sid);
-  }
-
-  return sid;
-}
-
-function setSessionId(sid) {
-  if (storage.cookiesAreEnabled()) {
-    const expires = new Date(Date.now() + COOKIE_EXP).toISOString();
-
-    storage.setCookie(SESSION_CODE, sid, expires);
-  }
-}
 // #endregion
 
 // #region Bid request validation
@@ -120,14 +86,11 @@ function createBidRequest(bid) {
       latitude,
       longitude,
       sdkVersion: sdkVersion || '1',
-      session: getSessionId(),
       interstitial: 0,
-      token: typeof window.top === 'object' && window.top[DGID_CODE] ? window.top[DGID_CODE] : undefined,
       secure: window.location.protocol === 'https:' ? 1 : 0,
       screenWidth: screen.width,
       screenHeight: screen.height,
       language: window.navigator.language || 'en-US',
-      // TODO: these should probably look at refererInfo
       pageUrl: window.location.href,
       domain: window.location.hostname,
       referrer: window.location.referrer,
