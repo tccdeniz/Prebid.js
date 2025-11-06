@@ -107,6 +107,28 @@ function setAdplusIdToCookie(value) {
 }
 
 /**
+ * I opened an issue (#14102) for this
+ * storage.cookiesAreEnabled is not working correctly
+ * in some circumstances and this value is critical for our api
+ * If the issues are resolved with the storage method
+ * I will remove this in future versions.
+ * @returns {boolean}
+ */
+function cookiesEnabled() {
+  try {
+    storage.setCookie("adplus_test", "1")
+    const value = storage.getCookie("adplus_test");
+    if (!value) {
+      return false;
+    }
+    storage.setCookie("adplus_test", "1", "Thu, 01 Jan 1970 00:00:00 UTC")
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * @param {boolean} isRotate - Determines whether the request is for rotation
  * @param {string} uid - UID to rotate
  * @param {function} callback - Callback
@@ -115,10 +137,8 @@ function setAdplusIdToCookie(value) {
 function fetchAdplusId(isRotate, uid, callback) {
   let apiUrl = API_URL;
 
-  const storageOk = storage.cookiesAreEnabled() || storage.localStorageIsEnabled();
-  if (!storageOk) {
-    apiUrl = `${apiUrl}&storage_ok=${storageOk ? "1" : "0"}`;
-  }
+  const storageOk = cookiesEnabled() || storage.localStorageIsEnabled();
+  apiUrl = `${apiUrl}&storage_ok=${storageOk ? "1" : "0"}`;
 
   if (isRotate && uid) {
     apiUrl = `${apiUrl}&old_uid=${uid}`;
@@ -139,6 +159,9 @@ function fetchAdplusId(isRotate, uid, callback) {
           logError(LOG_PREFIX + error);
           callback();
         }
+      } else {
+        logError(LOG_PREFIX + 'No uid returned.');
+        callback();
       }
     },
     error: (error) => {
