@@ -49,6 +49,11 @@ const adplusAnalyticsAdapter = Object.assign(adapter({ SERVER_URL, analyticsType
             return;
           }
 
+          const refererInfo = bid.refererInfo;
+          const pageUrl = refererInfo?.page || window.location.href;
+          const domain = refererInfo?.domain || window.location.hostname;
+          const referrer = refererInfo?.ref || window.location.referrer;
+
           const winningBidData = {
             type: BID_WON,
             bidder: bid.bidderCode,
@@ -69,12 +74,23 @@ const adplusAnalyticsAdapter = Object.assign(adapter({ SERVER_URL, analyticsType
             auctionId: bid.auctionId,
             adUnitCode: bid.adUnitCode,
             winningBid: winningBidData,
-            allBids: adUnitBids
+            allBids: adUnitBids,
+            pageUrl: pageUrl,
+            domain: domain,
+            referrer: referrer,
           };
 
           sendQueue.push(payload);
           if (!isSending) {
             processQueue();
+          }
+
+          if (auctionBids[bid.auctionId]) {
+            delete auctionBids[bid.auctionId][bid.adUnitCode];
+
+            if (Object.keys(auctionBids[bid.auctionId]).length === 0) {
+              delete auctionBids[bid.auctionId];
+            }
           }
           break;
 

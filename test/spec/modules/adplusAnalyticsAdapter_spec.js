@@ -26,6 +26,12 @@ describe('AdPlus analytics adapter', function () {
 
   const auctionId = 'test-auction-123';
 
+  const mockRefererInfo = {
+    page: 'https://test-site.com/page.html',
+    domain: 'test-site.com',
+    ref: 'https://google.com'
+  };
+
   const bidsReceived = [
     {
       bidderCode: 'adplus',
@@ -69,7 +75,8 @@ describe('AdPlus analytics adapter', function () {
     creativeId: 'crea-1',
     timeToRespond: 120,
     netRevenue: true,
-    dealId: null
+    dealId: null,
+    refererInfo: mockRefererInfo
   };
 
   const bidWon2 = {
@@ -84,7 +91,8 @@ describe('AdPlus analytics adapter', function () {
     creativeId: 'crea-2',
     timeToRespond: 110,
     netRevenue: true,
-    dealId: 'deal123'
+    dealId: 'deal123',
+    refererInfo: mockRefererInfo
   };
 
   it('should store bids on AUCTION_END and not send immediately', function () {
@@ -148,6 +156,18 @@ describe('AdPlus analytics adapter', function () {
     // Validate payloads
     const payload1 = JSON.parse(server.requests[0].requestBody);
     const payload2 = JSON.parse(server.requests[3].requestBody);
+
+    expect(payload1).to.include({
+      pageUrl: 'https://test-site.com/page.html',
+      domain: 'test-site.com',
+      referrer: 'https://google.com'
+    });
+
+    expect(payload2).to.include({
+      pageUrl: 'https://test-site.com/page.html',
+      domain: 'test-site.com',
+      referrer: 'https://google.com'
+    });
 
     expect(payload1.winningBid).to.include({
       auctionId,
