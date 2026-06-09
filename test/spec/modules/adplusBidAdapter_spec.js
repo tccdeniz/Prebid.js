@@ -112,7 +112,9 @@ describe('AplusBidAdapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'https://test.domain'
+        page: 'https://test.domain/page.html',
+        domain: 'test.domain',
+        ref: 'https://previous-google.com'
       }
     };
 
@@ -135,6 +137,9 @@ describe('AplusBidAdapter', function () {
       expect(request[0].data.adUnitWidth).to.equal(300);
       expect(request[0].data.adUnitHeight).to.equal(250);
       expect(request[0].data.sdkVersion).to.equal('1');
+      expect(request[0].data.pageUrl).to.equal('https://test.domain/page.html');
+      expect(request[0].data.domain).to.equal('test.domain');
+      expect(request[0].data.referrer).to.equal('https://previous-google.com');
       expect(request[0].data.eids).to.deep.equal([{
         source: 'ad-plus.com.tr',
         uids: [

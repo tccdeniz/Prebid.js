@@ -70,6 +70,12 @@ function createBidRequest(bid, bidderRequest) {
     sdkVersion,
   } = bid.params;
 
+  const refererInfo = bidderRequest?.refererInfo;
+
+  const pageUrl = refererInfo?.page || window.location.href;
+  const domain = refererInfo?.domain || window.location.hostname;
+  const referrer = refererInfo?.ref || window.location.referrer;
+
   return {
     method: 'POST',
     url: ADPLUS_ENDPOINT,
@@ -89,13 +95,13 @@ function createBidRequest(bid, bidderRequest) {
       longitude,
       sdkVersion: sdkVersion || '1',
       interstitial: 0,
-      secure: window.location.protocol === 'https:' ? 1 : 0,
+      secure: pageUrl?.startsWith('https:') ? 1 : 0,
       screenWidth: screen.width,
       screenHeight: screen.height,
       language: window.navigator.language || 'en-US',
-      pageUrl: window.location.href,
-      domain: window.location.hostname,
-      referrer: window.location.referrer,
+      pageUrl,
+      domain,
+      referrer,
       adplusUid: bid?.userId?.adplusId,
       eids: bid?.userIdAsEids,
     }),
