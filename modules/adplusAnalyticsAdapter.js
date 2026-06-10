@@ -50,9 +50,9 @@ const adplusAnalyticsAdapter = Object.assign(adapter({ SERVER_URL, analyticsType
           }
 
           const refererInfo = bid.refererInfo;
-          const pageUrl = refererInfo?.page || window.location.href;
-          const domain = refererInfo?.domain || window.location.hostname;
-          const referrer = refererInfo?.ref || window.location.referrer;
+          const pageUrl = refererInfo?.page || window.location.href || '';
+          const domain = refererInfo?.domain || window.location.hostname || '';
+          const referrer = refererInfo?.ref || window.document.referrer || window.location.href || '';
 
           const winningBidData = {
             type: BID_WON,
