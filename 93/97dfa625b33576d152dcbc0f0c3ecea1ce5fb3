@@ -1,0 +1,28 @@
+modules/adplusAnalyticsAdapter.js
+  s_3885723cdd5617::t_65d1a15e045837 170-171
+  s_3885723cdd5617::t_2b21bd99c23bb7 42,102
+test/spec/modules/adplusAnalyticsAdapter_spec.js
+  s_3885723cdd5617::t_d18e4be1d11b0f 278-292,294
+  s_3885723cdd5617::t_c32bf2218c83df 293
+test/spec/modules/adplusBidAdapter_spec.js
+  s_3885723cdd5617::t_d18e4be1d11b0f 174-183,185
+  s_3885723cdd5617::t_45f14c38921ccb 184
+modules/adplusBidAdapter.js
+  s_3885723cdd5617::t_2b21bd99c23bb7 76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9397dfa625b33576d152dcbc0f0c3ecea1ce5fb3",
+  "prompts": {},
+  "sessions": {
+    "s_3885723cdd5617": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "bcdd0d88-8104-49f6-b015-e3ff1a9a2e94",
+        "model": "unknown"
+      },
+      "human_author": "TCCDENIZ <cansin.deniz@turkcell.com.tr>"
+    }
+  }
+}
