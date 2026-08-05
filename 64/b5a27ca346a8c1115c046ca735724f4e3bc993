@@ -1,0 +1,22 @@
+metadata/modules/adplusIdSystem.json
+  s_0184b5575e01f5::t_7d74b62096d000 3-25,32
+modules/adplusIdSystem.js
+  s_0184b5575e01f5::t_b0d7e4aced7622 135
+  s_0184b5575e01f5::t_268f6b8a38e2a7 167-168
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "64b5a27ca346a8c1115c046ca735724f4e3bc993",
+  "prompts": {},
+  "sessions": {
+    "s_0184b5575e01f5": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "7b581aaf-aba4-4dad-85b6-ba484e25f66e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "TCCDENIZ <cansin.deniz@turkcell.com.tr>"
+    }
+  }
+}
